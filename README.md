@@ -1,109 +1,83 @@
-# PromptIR: Prompting for All-in-One Blind Image Restoration (NeurIPS'23)
+# Code Installation Memo. 
 
-[Vaishnav Potlapalli](https://www.vaishnavrao.com/), [Syed Waqas Zamir](https://scholar.google.ae/citations?hl=en&user=POoai-QAAAAJ), [Salman Khan](https://salman-h-khan.github.io/) and [Fahad Shahbaz Khan](https://scholar.google.es/citations?user=zvaeYnUAAAAJ&hl=en)
-
-[![paper](https://img.shields.io/badge/arXiv-Paper-<COLOR>.svg)](https://arxiv.org/abs/2306.13090)
-
-
-<hr />
-
-> **Abstract:** *Image restoration involves recovering a high-quality clean image from its degraded
-version. Deep learning-based methods have significantly improved image restora-
-tion performance, however, they have limited generalization ability to different
-degradation types and levels. This restricts their real-world application since it
-requires training individual models for each specific degradation and knowing the
-input degradation type to apply the relevant model. We present a prompt-based
-learning approach, PromptIR, for All-In-One image restoration that can effectively
-restore images from various types and levels of degradation. In particular, our
-method uses prompts to encode degradation-specific information, which is then
-used to dynamically guide the restoration network. This allows our method to
-generalize to different degradation types and levels, while still achieving state-of-
-the-art results on image denoising, deraining, and dehazing. Overall, PromptIR
-offers a generic and efficient plugin module with few lightweight prompts that can
-be used to restore images of various types and levels of degradation with no prior
-information of corruptions.* 
-<hr />
-
-## Network Architecture
-
-<img src = "mainfig.png"> 
-
-## Installation and Data Preparation
-
-See [INSTALL.md](INSTALL.md) for the installation of dependencies and dataset preperation required to run this codebase.
-
-## Training
-
-After preparing the training data in ```data/``` directory, use 
+> 현재, 이 repo의 코드를 사용하기 위해 초기 설정을 정리해두었습니다.
+- Conda environment (Conda를 사용하실 경우)
+```shell 
+conda create -n promptir python=3.8.11
+conda activate promptir 
 ```
+혹은, 아래의 코드로 가상환경에 접속할 수 있습니다.
+```shell 
+source activate promptir
+```
+
+- 만약 conda가 없을 경우, 아래의 코드로 가상환경을 만들 수 있습니다. 
+    - Conda 위로 설치하시는게 편합니다!
+```shell
+python -m venv venv python=3.8.11
+source activate venv 
+```
+
+
+- 가상환경이 setting되고, 가상환경에 들어가셨을 경우 라이브러리를 설치하면 됩니다. 
+```shell 
+pip install -r requirements.txt
+```
+
+- 여기까지 오셨을 경우, 기본적인 셋팅은 완료되었습니다.
+    - 만약 오류가 나올 경우, cuda version이 다른 경우가 있을 수 있습니다. 이러한 경우 아래의 홈페이지에서 pytorch 맞는 버전을 설치하시면 돌아갈겁니다.
+    - https://pytorch.org/get-started/previous-versions/ 
+
+- 오류를 해결하지 못하실 경우 메일로 물어봐주시면 도와드리겠습니다.
+
+
+<hr>
+
+## Options 설정 (학습을 진행 할 때와 inference 하는 경우 option 설정이 다릅니다.)
+- 학습을 진행하실 경우 options.py 파일에서 수정해주시면 됩니다.
+    - 해당 파일 내에서 아래 부분을 수정해주시면 됩니다.
+    - 현재 학습 한 checkpoint 의 경우 ./ckpt/ 아래 저장됩니다. 아래 option 들 중 ckpt_path 를 수정하시면 그 경로로 저장됩니다.
+    - 현재 ./ckpt 아래 32x32, 64x64 psf 이미지를 prompt 형태가 아닌 직접 넣고 학습 시킨 checkpoint 2개가 있습니다.
+```shell
+parser.add_argument('--data_file_dir', type=str, default='/data4/GalaxySynthesis/Galaxy_Dataset/240703_hst_dataset_fixed_size/f814w/64X64/minmax_ttv/train/gt/',  help='where clean images of denoising saves.') # ground truth 경로
+parser.add_argument('--denoise_dir', type=str, default='/data4/GalaxySynthesis/Galaxy_Dataset/240703_hst_dataset_fixed_size/f814w/64X64/minmax_ttv/train/gt/',
+                    help='where clean images of denoising saves.') # ground truth 경로
+parser.add_argument('--psf_dir', type=str, default='/data4/GalaxySynthesis/Galaxy_Dataset/240703_hst_dataset_fixed_size/f814w/psf_ttv/train/psf/',
+                    help='where training images of psf images saves.') # psf 경로
+parser.add_argument('--e1e2_dir', type=str, default='/data4/GalaxySynthesis/Galaxy_Dataset/240703_hst_dataset_fixed_size/f814w/240813_HST_PSF/e1e2/',
+                    help='where training images of e1e2 images saves.') # e1e2 경로
+parser.add_argument('--output_path', type=str, default="/home2/s20245354/PromptIR/output/64X64/train(240825_directlen6)", help='output save path') # training 과정 이미지 저장 경로이나 사용 안함
+parser.add_argument('--ckpt_path', type=str, default="/home2/s20245354/PromptIR/ckpt/Denoise/64X64/train(240825_directlen6)", help='checkpoint save path') # checkpoint 저장 경로
+parser.add_argument("--wblogger",type=str,default="promptir(direct64_len6)",help = "Determine to log to wandb or not and the project name") # wandb project name 
+parser.add_argument("--ckpt_dir",type=str, default="/home2/s20245354/PromptIR/ckpt/Denoise/64X64/train(240825_directlen6)", help = "Name of the Directory where the checkpoint is to be saved") # checkpoint 저장 경로, ckpt path 와 동일하게 지정
+parser.add_argument("--num_gpus",type=int,default= 1,help = "Number of GPUs to use for training")
+```
+- inference 의 경우 test.py 의 if __name__ == '__main__': 아래의 경로들을 수정해주시면 됩니다.
+
+- 물론 cmd 창에서 설정해서 코드를 실행하셔도 무방하십니다.
+```shell
+python train.py --datafile_dir /data4/..... --denoise_dir /data4/.....
+```
+
+
+## Galaxy Part 
+- 위에서 옵션으로 갤럭시 데이터의 경로를 지정해 주시고 train 또는 test 를 진행 하시면 됩니다.  
+- utils/data_utils.py 경로에서 dataset을 load하는 코드를 확인해보실 수 있습니다.
+- wandb, tensorboard를 통해 성능을 확인하고 있습니다. train 과정에서 현재는 psnr 과 ssim 만 확인 가능하고 학습 후 저장된 checkpoint 로 test.py 에서 inference 를 진행 할 수 있습니다.
+- test.py 에서 나온 결과값은 output/test/ 폴더안에 자동으로 저장됩니다. test.py 에서 output_path 를 변경할 경우 변경 된 곳에 저장됩니다.
+<hr>
+
+- train 코드
+```shell 
 python train.py
 ```
-to start the training of the model. Use the ```de_type``` argument to choose the combination of degradation types to train on. By default it is set to all the 3 degradation types (noise, rain, and haze).
 
-Example Usage: If we only want to train on deraining and dehazing:
-```
-python train.py --de_type derain dehaze
-```
-
-## Testing
-
-After preparing the testing data in ```test/``` directory, place the mode checkpoint file in the ```ckpt``` directory. The pretrained model can be downloaded [here](https://drive.google.com/file/d/1j-b5Od70pGF7oaCqKAfUzmf-N-xEAjYl/view?usp=sharingg), alternatively, it is also available under the releases tab. To perform the evalaution use
-```
-python test.py --mode {n}
-```
-```n``` is a number that can be used to set the tasks to be evaluated on, 0 for denoising, 1 for deraining, 2 for dehaazing and 3 for all-in-one setting.
-
-Example Usage: To test on all the degradation types at once, run:
-
-```
-python test.py --mode 3
+- test 코드
+```shell 
+python test.py
 ```
 
-## Demo
-To obtain visual results from the model ```demo.py``` can be used. After placing the saved model file in ```ckpt``` directory, run:
-```
-python demo.py --test_path {path_to_degraded_images} --output_path {save_images_here}
-```
-Example usage to run inference on a directory of images:
-```
-python demo.py --test_path './test/demo/' --output_path './output/demo/'
-```
-Example usage to run inference on an image directly:
-```
-python demo.py --test_path './test/demo/image.png' --output_path './output/demo/'
-```
-To use tiling option while running ```demo.py``` set ```--tile``` option to ```True```. The Tile size and Tile overlap parameters can be adjusted using ```--tile_size``` and ```--tile_overlap``` options respectively.
 
+<hr>
 
-
-
-## Results
-Performance results of the PromptIR framework trained under the all-in-one setting
-
-<summary><strong>Table</strong> </summary>
-
-<img src = "prompt-ir-results.png"> 
-
-<summary><strong>Visual Results</strong></summary>
-
-The visual results of the PromptIR model evaluated under the all-in-one setting can be downloaded [here](https://drive.google.com/drive/folders/1Sm-mCL-i4OKZN7lKuCUrlMP1msYx3F6t?usp=sharing)
-
-
-
-## Citation
-If you use our work, please consider citing:
-
-    @inproceedings{potlapalli2023promptir,
-      title={PromptIR: Prompting for All-in-One Image Restoration},
-      author={Potlapalli, Vaishnav and Zamir, Syed Waqas and Khan, Salman and Khan, Fahad},
-      booktitle={Thirty-seventh Conference on Neural Information Processing Systems},
-      year={2023}
-    }
-
-
-## Contact
-Should you have any questions, please contact pvaishnav2718@gmail.com
-
-
-**Acknowledgment:** This code is based on the [AirNet](https://github.com/XLearning-SCU/2022-CVPR-AirNet) and [Restormer](https://github.com/swz30/Restormer) repositories. 
-
+- https://github.com/va1shn9v/PromptIR 의 readme를 확인해보시면 실행에 오류가 있을 경우 도움이 되실 수 있습니다. 
